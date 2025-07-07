@@ -17,49 +17,61 @@ Quando usar caching distribuído?
 ## Arquitetura
 
 ```
-Client → Gateway → Hash Ring (Consistent Hashing) → Node → Local Cache
+Client → Gateway (HTTP) → Hash Ring → Node (gRPC) → Local Cache
 ```
 
-- **Client**: Realiza requisições de leitura/escrita de dados.
-- **Gateway**: Ponto de entrada, roteia requisições para o nó correto via gRPC.
+- **Client**: Realiza requisições HTTP para o gateway.
+- **Gateway**: Recebe requisições HTTP (GET, SET, DELETE, benchmark), utiliza o hash ring para decidir o nó responsável e faz proxy via gRPC para o nó correto.
 - **Hash Ring (Consistent Hashing)**: Responsável por balancear e localizar o nó responsável por cada chave, usando réplicas virtuais para melhor distribuição e resiliência.
 - **Node**: Instância do cache, responsável por armazenar parte dos dados e expor interface gRPC.
-- **Local Cache**: Armazenamento em memória de cada nó.
+- **Local Cache**: Armazenamento em memória de cada nó, com TTL, LRU e métricas.
 
 Veja o diagrama detalhado em `docs/architecture.drawio`.
 
-## Consistent Hashing
+## Fluxo de Requisições
 
-O Shardo utiliza o algoritmo de Consistent Hashing para distribuir as chaves entre os nós do cluster. As principais características:
+1. O cliente faz uma requisição HTTP para o gateway (`/get`, `/set`, `/delete`).
+2. O gateway usa o hash ring para decidir qual nó é responsável pela chave.
+3. O gateway faz uma chamada gRPC para o nó correto.
+4. O nó executa a operação no cache local e retorna o resultado.
 
-- **Réplicas Virtuais**: Cada nó é representado múltiplas vezes no anel de hash, melhorando a distribuição das chaves e reduzindo hotspots.
-- **Adição/Remoção Dinâmica de Nós**: É possível adicionar ou remover nós do cluster com impacto mínimo na redistribuição das chaves.
-- **Mapeamento de Chaves**: Uma função eficiente mapeia cada chave para o nó responsável, garantindo balanceamento e resiliência.
+## Endpoints do Gateway
 
-## CLI de Teste
+- `GET /get?key=foo` — Busca o valor da chave `foo`.
+- `POST /set?key=foo&ttl=60` — Define o valor da chave `foo` com TTL de 60 segundos (valor no corpo da requisição).
+- `DELETE /delete?key=foo` — Remove a chave `foo`.
+- `GET /benchmark?keys=1000` — Executa um benchmark de latência e distribuição de carga entre os nós.
 
-Inclui uma CLI para testar a distribuição de chaves entre os nós. Exemplo de uso:
+## Exemplo de Uso
 
 ```sh
-# Simula a distribuição de 1000 chaves entre 3 nós
-shardo-hashring-cli --nodes node1,node2,node3 --keys 1000
+# Set
+curl -X POST "http://localhost:8080/set?key=foo&ttl=60" -d 'bar'
+# Get
+curl "http://localhost:8080/get?key=foo"
+# Delete
+curl -X DELETE "http://localhost:8080/delete?key=foo"
+# Benchmark
+curl "http://localhost:8080/benchmark?keys=1000"
 ```
-
-A CLI mostra como as chaves são distribuídas e o impacto ao adicionar/remover nós.
 
 ## Estrutura de Pastas
 
 - `cmd/node`: Código do binário principal de cada nó.
+- `cmd/gateway`: Código do binário do gateway HTTP.
 - `cmd/hashring-cli`: CLI para testar o hash ring.
 - `pkg/cache`: Implementação do cache local.
 - `pkg/hashring`: Algoritmo de Consistent Hashing.
-- `internal/grpc`: Handlers e servidor gRPC.
+- `internal/grpc`: Servidor gRPC do nó.
+- `internal/gateway`: Lógica do gateway HTTP.
+- `proto/cachepb`: Código gerado do gRPC/protobuf.
 - `infra/`: Scripts e arquivos de infraestrutura.
 - `docs/`: Documentação e diagramas.
 
 ## Protocolos de Comunicação
 
-- Toda comunicação entre gateway e nós será feita via **gRPC** (alta performance, tipagem forte, fácil integração entre linguagens).
+- **Client → Gateway**: HTTP
+- **Gateway → Node**: gRPC
 
 ## FAQ
 
