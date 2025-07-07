@@ -17,20 +17,40 @@ Quando usar caching distribuído?
 ## Arquitetura
 
 ```
-Client → Gateway → Hash Ring → Node → Local Cache
+Client → Gateway → Hash Ring (Consistent Hashing) → Node → Local Cache
 ```
 
 - **Client**: Realiza requisições de leitura/escrita de dados.
 - **Gateway**: Ponto de entrada, roteia requisições para o nó correto via gRPC.
-- **Hash Ring**: Algoritmo de Consistent Hashing para balancear e localizar o nó responsável.
+- **Hash Ring (Consistent Hashing)**: Responsável por balancear e localizar o nó responsável por cada chave, usando réplicas virtuais para melhor distribuição e resiliência.
 - **Node**: Instância do cache, responsável por armazenar parte dos dados e expor interface gRPC.
 - **Local Cache**: Armazenamento em memória de cada nó.
 
 Veja o diagrama detalhado em `docs/architecture.drawio`.
 
+## Consistent Hashing
+
+O Shardo utiliza o algoritmo de Consistent Hashing para distribuir as chaves entre os nós do cluster. As principais características:
+
+- **Réplicas Virtuais**: Cada nó é representado múltiplas vezes no anel de hash, melhorando a distribuição das chaves e reduzindo hotspots.
+- **Adição/Remoção Dinâmica de Nós**: É possível adicionar ou remover nós do cluster com impacto mínimo na redistribuição das chaves.
+- **Mapeamento de Chaves**: Uma função eficiente mapeia cada chave para o nó responsável, garantindo balanceamento e resiliência.
+
+## CLI de Teste
+
+Inclui uma CLI para testar a distribuição de chaves entre os nós. Exemplo de uso:
+
+```sh
+# Simula a distribuição de 1000 chaves entre 3 nós
+shardo-hashring-cli --nodes node1,node2,node3 --keys 1000
+```
+
+A CLI mostra como as chaves são distribuídas e o impacto ao adicionar/remover nós.
+
 ## Estrutura de Pastas
 
 - `cmd/node`: Código do binário principal de cada nó.
+- `cmd/hashring-cli`: CLI para testar o hash ring.
 - `pkg/cache`: Implementação do cache local.
 - `pkg/hashring`: Algoritmo de Consistent Hashing.
 - `internal/grpc`: Handlers e servidor gRPC.

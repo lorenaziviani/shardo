@@ -5,19 +5,19 @@
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="2" value="Client\nUser or Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="120" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="40" y="130" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="3" value="Gateway\nEntry API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="1" vertex="1">
-                    <mxGeometry x="200" y="120" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="200" y="130" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="Hash Ring\nConsistent Hashing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
-                    <mxGeometry x="360" y="120" width="140" height="60" as="geometry"/>
+                <mxCell id="4" value="Hash Ring\nConsistent Hashing\n(Virtual Replicas, Dynamic Node Add/Remove)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="120" width="180" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="5" value="Node\nCache Node" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
-                    <mxGeometry x="540" y="120" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="580" y="130" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="6" value="Local Cache\nNode Memory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="120" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="740" y="130" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6c8ebf;" parent="1" source="2" target="3" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -30,6 +30,9 @@
                 </mxCell>
                 <mxCell id="10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#82b366;" parent="1" source="5" target="6" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="Virtual Replicas: Improve key distribution\nDynamic Node Add/Remove: Minimal impact on keys" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;dashed=1;" vertex="1" parent="1">
+                    <mxGeometry x="330" y="230" width="260" height="60" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
