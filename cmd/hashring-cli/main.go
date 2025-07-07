@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"../../pkg/hashring"
+	"shardo/pkg/hashring"
 )
 
 func main() {
