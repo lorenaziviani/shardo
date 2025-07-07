@@ -3,12 +3,17 @@ package grpcserver
 import (
 	"context"
 	"log"
+	"math"
 	"net"
+	"net/http"
+	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
 	"shardo/pkg/cache"
+	"shardo/proto/cachepb"
 )
 
 type CacheServiceServer interface {
@@ -20,6 +25,7 @@ type CacheServiceServer interface {
 
 type server struct {
 	cache *cache.Cache
+	cachepb.UnimplementedCacheServiceServer
 }
 
 type GetRequest struct {
@@ -46,25 +52,57 @@ type MetricsResponse struct {
 	Size   int32
 }
 
-func (s *server) Get(ctx context.Context, req *GetRequest) (*GetResponse, error) {
+func safeInt32(val int) int32 {
+	if val > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if val < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(val)
+}
+
+func (s *server) Get(ctx context.Context, req *cachepb.GetRequest) (*cachepb.GetResponse, error) {
 	val, ok := s.cache.Get(req.Key)
-	return &GetResponse{Value: val, Found: ok}, nil
+	return &cachepb.GetResponse{Value: val, Found: ok}, nil
 }
-func (s *server) Set(ctx context.Context, req *SetRequest) (*SetResponse, error) {
+func (s *server) Set(ctx context.Context, req *cachepb.SetRequest) (*cachepb.SetResponse, error) {
 	s.cache.Set(req.Key, req.Value, time.Duration(req.Ttl)*time.Second)
-	return &SetResponse{}, nil
+	return &cachepb.SetResponse{}, nil
 }
-func (s *server) Delete(ctx context.Context, req *DeleteRequest) (*DeleteResponse, error) {
+func (s *server) Delete(ctx context.Context, req *cachepb.DeleteRequest) (*cachepb.DeleteResponse, error) {
 	s.cache.Delete(req.Key)
-	return &DeleteResponse{}, nil
+	return &cachepb.DeleteResponse{}, nil
 }
-func (s *server) Metrics(ctx context.Context, req *MetricsRequest) (*MetricsResponse, error) {
+func (s *server) Metrics(ctx context.Context, req *cachepb.MetricsRequest) (*cachepb.MetricsResponse, error) {
 	hits, misses, size := s.cache.Metrics()
-	return &MetricsResponse{Hits: int32(hits), Misses: int32(misses), Size: int32(size)}, nil
+	return &cachepb.MetricsResponse{
+		Hits:   safeInt32(hits),
+		Misses: safeInt32(misses),
+		Size:   safeInt32(size),
+	}, nil
 }
 
 func StartGRPCServer(port string, cacheCap int) {
+	c := cache.New(cacheCap)
 	s := grpc.NewServer()
+	cachepb.RegisterCacheServiceServer(s, &server{cache: c})
+
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		srv := &http.Server{
+			Addr:         ":" + os.Getenv("METRICS_PORT"),
+			Handler:      mux,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		}
+		log.Printf("Prometheus metrics on :%s/metrics", os.Getenv("METRICS_PORT"))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("metrics server error: %v", err)
+		}
+	}()
 
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {

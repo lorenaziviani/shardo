@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "shardo-nodes"
+    static_configs:
+      - targets: ["node1:9101", "node2:9102", "node3:9103"]

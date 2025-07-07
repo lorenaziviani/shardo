@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  node1:
+    build: .
+    command: ["/bin/node"]
+    environment:
+      - NODE_GRPC_PORT=50051
+      - CACHE_SIZE_MB=128
+      - METRICS_PORT=9101
+    ports:
+      - "50051:50051"
+      - "9101:9101"
+  node2:
+    build: .
+    command: ["/bin/node"]
+    environment:
+      - NODE_GRPC_PORT=50052
+      - CACHE_SIZE_MB=128
+      - METRICS_PORT=9102
+    ports:
+      - "50052:50052"
+      - "9102:9102"
+  node3:
+    build: .
+    command: ["/bin/node"]
+    environment:
+      - NODE_GRPC_PORT=50053
+      - CACHE_SIZE_MB=128
+      - METRICS_PORT=9103
+    ports:
+      - "50053:50053"
+      - "9103:9103"
+  gateway:
+    build: .
+    command: ["/bin/gateway"]
+    environment:
+      - GATEWAY_HTTP_PORT=8080
+      - NODES=node1:node1:50051,node2:node2:50052,node3:node3:50053
+    ports:
+      - "8080:8080"
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - node1
+      - node2
+      - node3
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./infra/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infra/grafana/provisioning/dashboards/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources 

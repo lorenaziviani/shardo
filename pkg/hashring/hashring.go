@@ -1,7 +1,7 @@
 package hashring
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"sort"
 	"strconv"
 	"sync"
@@ -85,8 +85,8 @@ func (h *HashRing) Nodes() []string {
 }
 
 func hashKey(key string) uint32 {
-	h := sha1.New()
+	h := sha256.New()
 	h.Write([]byte(key))
-	sum := h.Sum(nil)
-	return (uint32(sum[16]) << 24) | (uint32(sum[13]) << 16) | (uint32(sum[7]) << 8) | uint32(sum[3])
+	hash := h.Sum(nil)
+	return uint32(hash[0])<<24 | uint32(hash[1])<<16 | uint32(hash[2])<<8 | uint32(hash[3])
 }
