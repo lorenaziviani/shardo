@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"shardo/internal/gateway"
@@ -21,10 +22,16 @@ func main() {
 			nodes[parts[0]] = parts[1] + ":" + parts[2]
 		}
 	}
+	replicationFactor := 2
+	if v := os.Getenv("SHARDO_REPLICATION_FACTOR"); v != "" {
+		if val, err := strconv.Atoi(v); err == nil && val > 0 {
+			replicationFactor = val
+		}
+	}
 	cfg := gateway.GatewayConfig{
 		Nodes:    nodes,
-		Replicas: 100,
+		Replicas: replicationFactor,
 	}
-	log.Printf("Starting gateway on port %s", port)
+	log.Printf("Starting gateway on port %s with replication factor %d", port, replicationFactor)
 	gateway.NewGateway(cfg).Serve(port)
 }

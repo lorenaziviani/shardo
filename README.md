@@ -174,6 +174,18 @@ GRPC_PORT=50051
 
 ---
 
+## Configuração de Replicação
+
+- `SHARDO_REPLICATION_FACTOR`: Define o número de nós em que cada chave será replicada. Valor padrão: 2. Exemplo de uso:
+
+```sh
+export SHARDO_REPLICATION_FACTOR=3
+```
+
+Aumentar esse valor melhora a disponibilidade das chaves em caso de falha de nós, ao custo de maior uso de memória.
+
+---
+
 ## 📁 Estrutura de Pastas
 
 ```
